@@ -15,18 +15,32 @@ const { dbConnect } = require('./db-mongoose');
 let users = {}
 let rooms = {}
 // default namespace is /
-class lobby {
+class Main {
   //dont know if need to pass in socket server object
-  constructor(io, name, host) {
-    this.host = host;
-    this.name = name;
+  constructor(io) {
+    this.host = 'host';
+    this.name = 'main';
+    this.users = [];
+    this.rooms = []
     this.timer = 20;
-    this.room = socket.join(name);
-
+    this.io = io;
+    this.initiateIO();
+  }
+  initiateIO() {
+    this.io.on('connection', (socket) => {
+      console.log('user connected', socket.id)
+      this.users.push(socket.id)
+      console.log(this.users)
+      socket.emit('join-main', 'Hello, there are' + this.users.length + 'in the session.')
+    })
+    this.io.on('disconnect', socket => {
+      console.log('user disconnected', socket.id)
+    })
   }
   createRoom() {
     //where host creates a socket.io room with this.name
     //add host to object or something
+
   }
   joinRoom() {
 
@@ -52,14 +66,14 @@ class lobby {
     //do end room stuff
   }
 }
-class Room extends Lobby {
-  constructor(name, io) {
-    super()
-    this.host = host;
-    this.name = name;
-    this.timer = 20;
-  }
-}
+// class Room extends Main {
+//   constructor(name, io) {
+//     super()
+//     this.host = host;
+//     this.name = name;
+//     this.timer = 20;
+//   }
+// }
 const app = express();
 // const jwtAuth = passport.authenticate('jwt', { session: false });
 app.use(
@@ -113,27 +127,25 @@ function runServer(port = PORT) {
   // console.log('server:', server);
   let io = socket(server);
   //getting info we recieved from client (author and mesage) and sending it to everyone else
-  io.on('connection', (socket) => {
-    console.log('user connected:', socket.id);
-    socket.emit('hello, there are users here');
-    socket.on('CREATE_ROOM', ()=> {
+  // io.on('connection', (socket) => {
+  //   console.log('user connected:', socket.id);
+  //   socket.emit('hello, there are users here');
+  //   socket.on('CREATE_ROOM', ()=> {
 
-    });
-    socket.on('TYPING', function(msg){
-      io.sockets.emit('typeUpdate', msg )
-    });
-    socket.on('subscribe', chat => {
-      socket.join(chat);
-    });
-    socket.on('CHAT', function (data) {
-      io.sockets.in(data.room).emit('CHAT', data);
-    });
-  });
+  //   });
+  //   socket.on('TYPING', function(msg){
+  //     io.sockets.emit('typeUpdate', msg )
+  //   });
+  //   socket.on('subscribe', chat => {
+  //     socket.join(chat);
+  //   });
+  //   socket.on('CHAT', function (data) {
+  //     io.sockets.in(data.room).emit('CHAT', data);
+  //   });
+  // });
+  const main = new Main(io)
 }
-    io.on('connection', socket => {
-      console.log('user connected:', socket.id);
 
-    })
 
 if (require.main === module) {
   dbConnect();
