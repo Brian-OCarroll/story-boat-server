@@ -18,9 +18,9 @@ let rooms = {}
 class Main {
   //dont know if need to pass in socket server object
   constructor(io) {
-    this.host = 'host';
+    // this.host = 'host';
     this.name = 'main';
-    this.users = [];
+    this.users = {};
     this.rooms = []
     this.timer = 20;
     this.io = io;
@@ -29,21 +29,36 @@ class Main {
   initiateIO() {
     this.io.on('connection', (socket) => {
       console.log('user connected', socket.id)
-      this.users.push(socket.id)
+      this.users[socket.id] = ''
       console.log(this.users)
-      socket.emit('join-main', 'Hello, there are' + this.users.length + 'in the session.')
+      socket.emit('join-main', 'Hello, there are' + this.users.length + 'users and '+ this.rooms.length + 'rooms in the session.')
+      socket.on('createRoom', (roomName, host) => {
+       this.createRoom(roomName, host)
+       io.emit('A new game was created: ', roomName)
+       this.rooms.push(newRoom)
+      })
+      socket.on('setUsername', (name)=> {
+        setUsername(socket.id, name)
+      })
+      // this.createRoom('blef', 'blorg')
+      // this.createRoom('bleffd', 'fd')
+      // console.log(this.rooms)
     })
     this.io.on('disconnect', socket => {
       console.log('user disconnected', socket.id)
     })
   }
-  createRoom() {
+  setUsername(id, name){
+    this.users[id] = name
+  }
+  createRoom(roomName, host) {
+    const newRoom = new Room(roomName, host, this.io);
     //where host creates a socket.io room with this.name
     //add host to object or something
-
+    
   }
   joinRoom() {
-
+    
   }
   startSession() {
     //once all users are present. Initiate game
@@ -66,14 +81,17 @@ class Main {
     //do end room stuff
   }
 }
-// class Room extends Main {
-//   constructor(name, io) {
-//     super()
-//     this.host = host;
-//     this.name = name;
-//     this.timer = 20;
-//   }
-// }
+
+
+class Room {
+  constructor(name, host, io) {
+    this.host = host;
+    this.name = name;
+    this.io = io
+    this.timer = 20;
+  }
+
+}
 const app = express();
 // const jwtAuth = passport.authenticate('jwt', { session: false });
 app.use(
@@ -144,6 +162,7 @@ function runServer(port = PORT) {
   //   });
   // });
   const main = new Main(io)
+  // main.createRoom('jews', 'jeff')
 }
 
 
