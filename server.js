@@ -31,25 +31,28 @@ class Main {
       console.log('user connected', socket.id)
       this.users[socket.id] = ''
       console.log(this.users)
-      socket.emit('join-main', 'Hello, there are' + this.users.length + 'users and '+ this.rooms.length + 'rooms in the session.')
+      // socket.emit('join-main', 'Hello, there are' + this.users.length + 'users and '+ this.rooms.length + 'rooms in the session.')
       socket.on('createRoom', (roomName, host) => {
        this.createRoom(roomName, host)
        io.emit('A new game was created: ', roomName)
        this.rooms.push(newRoom)
       })
-      socket.on('setUsername', (name)=> {
-        setUsername(socket.id, name)
+      socket.on('registerUsername', (name)=> {
+        if(this.users[socket.id] === name){
+          socket.emit('err', 'name already exists')
+        }else{
+          this.setUsername(socket.id, name)
+        }
       })
-      // this.createRoom('blef', 'blorg')
-      // this.createRoom('bleffd', 'fd')
-      // console.log(this.rooms)
-    })
-    this.io.on('disconnect', socket => {
-      console.log('user disconnected', socket.id)
+      socket.on('disconnect', () => {
+        console.log('user disconnected', socket.id)
+        delete this.users[socket.id]
+      })
     })
   }
   setUsername(id, name){
     this.users[id] = name
+    console.log(this.users)
   }
   createRoom(roomName, host) {
     const newRoom = new Room(roomName, host, this.io);
