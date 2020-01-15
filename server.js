@@ -5,6 +5,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const passport = require('passport');
 const socket = require('socket.io');
+let socketSingleton = require('./configureSocketIO');
 
 const { PORT, CLIENT_ORIGIN } = require('./config');
 const { dbConnect } = require('./db-mongoose');
@@ -168,6 +169,44 @@ function runServer(port = PORT) {
   // main.createRoom('jews', 'jeff')
 }
 
+// Referenced by both runServer and closeServer. closeServer
+// assumes runServer has run and set `server` to a server object
+let server;
+
+function runServer() {
+  return new Promise((resolve, reject) => {
+    mongoose.connect(DATABASE_URL, { useMongoClient: true }, err => {
+      if (err) {
+        return reject(err);
+      }
+      server = app
+        .listen(PORT, () => {
+          console.log(`Your app is listening on port ${PORT}`);
+          // let io = socket(server);
+          socketSingleton.configure(server);
+          resolve();
+        })
+        .on('error', err => {
+          mongoose.disconnect();
+          reject(err);
+        });
+    });
+  });
+}
+
+function closeServer() {
+  return mongoose.disconnect().then(() => {
+    return new Promise((resolve, reject) => {
+      console.log('Closing server');
+      server.close(err => {
+        if (err) {
+          return reject(err);
+        }
+        resolve();
+      });
+    });
+  });
+}
 
 if (require.main === module) {
   dbConnect();
