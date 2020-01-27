@@ -28,6 +28,7 @@ $(function() {
     var socket = io();
   
     function addParticipantsMessage (data) {
+      console.log(data)
       var message = '';
       if (data.numUsers === 1) {
         message += "Crickets...It's Just YOU and ME -Robot";

@@ -1,9 +1,28 @@
+const uuidv4 = require('uuid/v4')
+//gameList object structure
+// {
+//     lobbyName: String,
+//     queing: Boolean,
+//     count: number 5 and less
+// }
+// Entire GameCollection Object holds all games and info
+
+let gameCollection =  new function() {
+
+    this.totalGameCount = 0,
+    this.gameList = {}
+  
+  };
+  
+
+
+
 module.exports = class Main {
     //dont know if need to pass in socket server object
     constructor(io) {
         // this.host = 'host';
         this.totalGameCount = 0,
-        this.gameList = []
+        this.gameList = [];
         this.loopLimit = 0;
         this.io = io;
         this.numUsers = 0;
@@ -16,14 +35,7 @@ module.exports = class Main {
         this.io.on('connection', function (socket) {
             let addedUser = false;
 
-            // when the client emits 'new message', this listens and executes
-            socket.on('new message', function (data) {
-                // we tell the client to execute 'new message'
-                socket.broadcast.emit('new message', {
-                    username: socket.username,
-                    message: data
-                });
-            });
+
 
             // when the client emits 'add user', this listens and executes
             socket.on('add user', function (username) {
@@ -40,20 +52,6 @@ module.exports = class Main {
                 socket.broadcast.emit('user joined', {
                     username: socket.username,
                     numUsers: this.numUsers
-                });
-            });
-
-            // when the client emits 'typing', we broadcast it to others
-            socket.on('typing', function () {
-                socket.broadcast.emit('typing', {
-                    username: socket.username
-                });
-            });
-
-            // when the client emits 'stop typing', we broadcast it to others
-            socket.on('stop typing', function () {
-                socket.broadcast.emit('stop typing', {
-                    username: socket.username
                 });
             });
 
@@ -117,26 +115,27 @@ module.exports = class Main {
         });
     }
 
-    buildGame(socket) {
+    buildGame(socket, lobbyName) {
 
 
         let gameObject = {};
-        gameObject.id = (Math.random() + 1).toString(36).slice(2, 18);
+        gameObject.id = uuidv4();
+        gameObject.lobbyName = lobbyName;
         gameObject.playerOne = socket.username;
         gameObject.playerTwo = null;
         gameObject.playerThree = null;
         gameObject.playerFour = null;
         gameObject.playerFive = null;
         this.totalGameCount++;
-        this.gameList.push({ gameObject });
-
+        gameCollection.gameList.push({ gameObject });
+    
         console.log("Game Created by " + socket.username + " w/ " + gameObject.id);
         io.emit('gameCreated', {
             username: socket.username,
             gameId: gameObject.id
         });
-
-
+    
+    
     }
     killGame(socket) {
 
@@ -243,3 +242,9 @@ module.exports = class Main {
 
 }
 
+class Queue extends Main {
+    constructor() {
+        super()
+
+    }
+}
